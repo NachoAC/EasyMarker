@@ -95,6 +95,14 @@ describe('classify: moved links', () => {
     assert.equal(result.suggested, true);
   });
 
+  it('keeps a temporary redirect to another port unselected, even when it switches to https', () => {
+    const from = 'http://example.com:8080/report';
+    const to = 'https://example.com/report';
+    const result = classify(from, response(200, to, [hop(from, to, 302)]));
+    assert.equal(result.reason, Reason.TEMPORARY);
+    assert.equal(result.suggested, false);
+  });
+
   it('does not pre-select a deep link that now lands on the homepage', () => {
     const home = 'https://example.com/';
     const result = classify(URL_A, response(200, home, [hop(URL_A, home, 301)]));

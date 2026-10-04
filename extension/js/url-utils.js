@@ -56,6 +56,8 @@ export function carryFragment(target, original) {
 /**
  * True when `to` is the same address as `from`, only upgraded from http to https.
  * Chrome performs HSTS upgrades as an internal 307, which would otherwise look temporary.
+ * The port must match too (`URL.port` is '' for each scheme's default): a non-default
+ * port may be a different service, and HSTS keeps non-default ports as they are.
  * @param {string} from
  * @param {string} to
  */
@@ -66,6 +68,7 @@ export function isHttpsUpgrade(from, to) {
     a.protocol === 'http:' &&
     b.protocol === 'https:' &&
     a.hostname === b.hostname &&
+    a.port === b.port &&
     a.pathname === b.pathname &&
     a.search === b.search
   );

@@ -48,12 +48,19 @@ describe('carryFragment', () => {
 describe('isHttpsUpgrade', () => {
   it('detects the same address moving to https', () => {
     assert.equal(isHttpsUpgrade('http://example.com/a?b=1', 'https://example.com/a?b=1'), true);
+    assert.equal(isHttpsUpgrade('http://example.com:80/a', 'https://example.com:443/a'), true);
+    assert.equal(isHttpsUpgrade('http://example.com:8080/a', 'https://example.com:8080/a'), true);
   });
 
   it('rejects any other change', () => {
     assert.equal(isHttpsUpgrade('http://example.com/a', 'https://www.example.com/a'), false);
     assert.equal(isHttpsUpgrade('http://example.com/a', 'https://example.com/b'), false);
     assert.equal(isHttpsUpgrade('https://example.com/a', 'http://example.com/a'), false);
+  });
+
+  it('rejects a change of port, which may be a different service', () => {
+    assert.equal(isHttpsUpgrade('http://example.com:8080/report', 'https://example.com/report'), false);
+    assert.equal(isHttpsUpgrade('http://example.com/report', 'https://example.com:8443/report'), false);
   });
 });
 
