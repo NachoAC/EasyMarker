@@ -1,0 +1,238 @@
+{
+  "extName": {
+    "message": "EasyMarker"
+  },
+  "extDescription": {
+    "message": "Comprueba los enlaces de tus marcadores y tu lista de lectura: actualiza los que han cambiado y elimina los que ya no existen."
+  },
+  "actionTitle": {
+    "message": "Revisar marcadores"
+  },
+  "backupButton": {
+    "message": "Copia de seguridad"
+  },
+  "startTitle": {
+    "message": "Pon orden en tus marcadores"
+  },
+  "startLead": {
+    "message": "EasyMarker comprueba cada enlace de tus marcadores y de tu lista de lectura. Antes de cambiar nada te enseña qué se actualizaría y qué se eliminaría, y tú decides."
+  },
+  "statBookmarks": {
+    "message": "Marcadores"
+  },
+  "readingList": {
+    "message": "Lista de lectura"
+  },
+  "sourceBookmark": {
+    "message": "Marcador"
+  },
+  "scanButton": {
+    "message": "Analizar enlaces"
+  },
+  "startHint": {
+    "message": "Chrome te pedirá permiso para acceder a los sitios enlazados. EasyMarker solo visita cada enlace para ver si responde: no guarda ni envía tus datos a ningún sitio."
+  },
+  "scanTitle": {
+    "message": "Comprobando enlaces…"
+  },
+  "scanProgress": {
+    "message": "$DONE$ de $TOTAL$ enlaces",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "tallyOk": {
+    "message": "Correctos"
+  },
+  "tallyUpdate": {
+    "message": "Han cambiado"
+  },
+  "tallyRemove": {
+    "message": "Rotos"
+  },
+  "cancelButton": {
+    "message": "Cancelar"
+  },
+  "scanHint": {
+    "message": "Mantén esta pestaña abierta hasta que termine."
+  },
+  "scanCancelled": {
+    "message": "Análisis cancelado. No se ha cambiado nada."
+  },
+  "reviewTitle": {
+    "message": "Revisa los cambios"
+  },
+  "reviewSummary": {
+    "message": "Correctos: $OK$ · Sin comprobar: $UNCHECKED$ · Omitidos: $SKIPPED$",
+    "placeholders": {
+      "ok": {
+        "content": "$1"
+      },
+      "unchecked": {
+        "content": "$2"
+      },
+      "skipped": {
+        "content": "$3"
+      }
+    }
+  },
+  "skippedHint": {
+    "message": "Se omiten los enlaces que no son páginas web (javascript:, chrome://, file://…) y los marcadores gestionados por tu organización. «Sin comprobar» son enlaces bloqueados desde este equipo (proxy, políticas…)."
+  },
+  "reviewTabsLabel": {
+    "message": "Tipo de cambio"
+  },
+  "tabUpdate": {
+    "message": "Para actualizar"
+  },
+  "tabRemove": {
+    "message": "Para eliminar"
+  },
+  "selectAll": {
+    "message": "Seleccionar todo"
+  },
+  "selectedOf": {
+    "message": "$SELECTED$ de $TOTAL$ seleccionados",
+    "placeholders": {
+      "selected": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "emptyUpdate": {
+    "message": "Ningún enlace ha cambiado de dirección."
+  },
+  "emptyRemove": {
+    "message": "No hay enlaces rotos."
+  },
+  "selectionSummary": {
+    "message": "Para actualizar: $UPDATES$ · Para eliminar: $REMOVALS$",
+    "placeholders": {
+      "updates": {
+        "content": "$1"
+      },
+      "removals": {
+        "content": "$2"
+      }
+    }
+  },
+  "rescanButton": {
+    "message": "Volver a analizar"
+  },
+  "applyButton": {
+    "message": "Aplicar cambios"
+  },
+  "applyingButton": {
+    "message": "Aplicando…"
+  },
+  "confirmTitle": {
+    "message": "¿Aplicar los cambios?"
+  },
+  "confirmWarning": {
+    "message": "Esta acción no se puede deshacer. Si quieres, descarga antes una copia de seguridad: se puede importar en Chrome desde el administrador de marcadores."
+  },
+  "confirmBackup": {
+    "message": "Descargar copia"
+  },
+  "confirmApply": {
+    "message": "Aplicar"
+  },
+  "doneTitle": {
+    "message": "Cambios aplicados"
+  },
+  "doneSummary": {
+    "message": "Actualizados: $UPDATED$ · Eliminados: $REMOVED$",
+    "placeholders": {
+      "updated": {
+        "content": "$1"
+      },
+      "removed": {
+        "content": "$2"
+      }
+    }
+  },
+  "doneFailuresTitle": {
+    "message": "Algunos cambios no se han aplicado"
+  },
+  "restartButton": {
+    "message": "Volver al inicio"
+  },
+  "reason_permanent": {
+    "message": "Movido"
+  },
+  "reason_https": {
+    "message": "Ahora con HTTPS"
+  },
+  "reason_temporary": {
+    "message": "Redirección temporal"
+  },
+  "reason_homepage": {
+    "message": "Lleva a la portada"
+  },
+  "reason_notFound": {
+    "message": "No encontrado"
+  },
+  "reason_gone": {
+    "message": "Eliminado"
+  },
+  "reason_dns": {
+    "message": "El dominio no existe"
+  },
+  "reason_server": {
+    "message": "Error del servidor"
+  },
+  "reason_client": {
+    "message": "Respuesta inesperada"
+  },
+  "reason_timeout": {
+    "message": "No responde"
+  },
+  "reason_connection": {
+    "message": "No se puede conectar"
+  },
+  "reason_tls": {
+    "message": "Conexión segura no válida"
+  },
+  "reason_redirectLoop": {
+    "message": "Demasiadas redirecciones"
+  },
+  "reason_network": {
+    "message": "Error de red"
+  },
+  "errorOffline": {
+    "message": "No hay conexión a Internet. Conéctate y vuelve a intentarlo."
+  },
+  "errorPermission": {
+    "message": "Sin permiso para acceder a los sitios no se pueden comprobar los enlaces."
+  },
+  "errorNothingToCheck": {
+    "message": "No hay enlaces web que comprobar."
+  },
+  "errorGeneric": {
+    "message": "Algo ha fallado: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorBackup": {
+    "message": "No se ha podido crear la copia de seguridad: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorStale": {
+    "message": "ha cambiado o ya no existe desde el análisis"
+  }
+}

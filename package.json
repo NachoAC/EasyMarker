@@ -1,0 +1,22 @@
+{
+  "name": "easymarker",
+  "private": true,
+  "description": "Extensión de Chrome que comprueba los enlaces de tus marcadores y tu lista de lectura.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.2"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test \"test/unit/*.test.mjs\"",
+    "test:e2e": "node test/e2e/run.mjs",
+    "icons": "node scripts/build-icons.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "globals": "^17.13.0",
+    "playwright": "1.56.1"
+  }
+}
