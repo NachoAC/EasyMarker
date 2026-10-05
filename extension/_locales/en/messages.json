@@ -1,0 +1,238 @@
+{
+  "extName": {
+    "message": "EasyMarker"
+  },
+  "extDescription": {
+    "message": "Checks the links in your bookmarks and reading list: update the ones that moved and remove the ones that no longer exist."
+  },
+  "actionTitle": {
+    "message": "Check bookmarks"
+  },
+  "backupButton": {
+    "message": "Back up"
+  },
+  "startTitle": {
+    "message": "Tidy up your bookmarks"
+  },
+  "startLead": {
+    "message": "EasyMarker checks every link in your bookmarks and reading list. Before changing anything it shows you what would be updated and what would be removed, and you decide."
+  },
+  "statBookmarks": {
+    "message": "Bookmarks"
+  },
+  "readingList": {
+    "message": "Reading list"
+  },
+  "sourceBookmark": {
+    "message": "Bookmark"
+  },
+  "scanButton": {
+    "message": "Check links"
+  },
+  "startHint": {
+    "message": "Chrome will ask for permission to access the linked sites. EasyMarker only visits each link to see whether it responds; it never stores or sends your data anywhere."
+  },
+  "scanTitle": {
+    "message": "Checking links…"
+  },
+  "scanProgress": {
+    "message": "$DONE$ of $TOTAL$ links",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "tallyOk": {
+    "message": "Working"
+  },
+  "tallyUpdate": {
+    "message": "Moved"
+  },
+  "tallyRemove": {
+    "message": "Broken"
+  },
+  "cancelButton": {
+    "message": "Cancel"
+  },
+  "scanHint": {
+    "message": "Keep this tab open until it finishes."
+  },
+  "scanCancelled": {
+    "message": "Check cancelled. Nothing was changed."
+  },
+  "reviewTitle": {
+    "message": "Review the changes"
+  },
+  "reviewSummary": {
+    "message": "Working: $OK$ · Not checked: $UNCHECKED$ · Skipped: $SKIPPED$",
+    "placeholders": {
+      "ok": {
+        "content": "$1"
+      },
+      "unchecked": {
+        "content": "$2"
+      },
+      "skipped": {
+        "content": "$3"
+      }
+    }
+  },
+  "skippedHint": {
+    "message": "Links that are not web pages (javascript:, chrome://, file://…) and bookmarks managed by your organization are skipped. \"Not checked\" are links blocked from this computer (proxy, policies…)."
+  },
+  "reviewTabsLabel": {
+    "message": "Type of change"
+  },
+  "tabUpdate": {
+    "message": "To update"
+  },
+  "tabRemove": {
+    "message": "To remove"
+  },
+  "selectAll": {
+    "message": "Select all"
+  },
+  "selectedOf": {
+    "message": "$SELECTED$ of $TOTAL$ selected",
+    "placeholders": {
+      "selected": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "emptyUpdate": {
+    "message": "No link has moved."
+  },
+  "emptyRemove": {
+    "message": "No broken links."
+  },
+  "selectionSummary": {
+    "message": "To update: $UPDATES$ · To remove: $REMOVALS$",
+    "placeholders": {
+      "updates": {
+        "content": "$1"
+      },
+      "removals": {
+        "content": "$2"
+      }
+    }
+  },
+  "rescanButton": {
+    "message": "Check again"
+  },
+  "applyButton": {
+    "message": "Apply changes"
+  },
+  "applyingButton": {
+    "message": "Applying…"
+  },
+  "confirmTitle": {
+    "message": "Apply the changes?"
+  },
+  "confirmWarning": {
+    "message": "This can't be undone. You may want to download a backup first: it can be imported into Chrome from the bookmark manager."
+  },
+  "confirmBackup": {
+    "message": "Download backup"
+  },
+  "confirmApply": {
+    "message": "Apply"
+  },
+  "doneTitle": {
+    "message": "Changes applied"
+  },
+  "doneSummary": {
+    "message": "Updated: $UPDATED$ · Removed: $REMOVED$",
+    "placeholders": {
+      "updated": {
+        "content": "$1"
+      },
+      "removed": {
+        "content": "$2"
+      }
+    }
+  },
+  "doneFailuresTitle": {
+    "message": "Some changes weren't applied"
+  },
+  "restartButton": {
+    "message": "Back to start"
+  },
+  "reason_permanent": {
+    "message": "Moved"
+  },
+  "reason_https": {
+    "message": "Now on HTTPS"
+  },
+  "reason_temporary": {
+    "message": "Temporary redirect"
+  },
+  "reason_homepage": {
+    "message": "Goes to the homepage"
+  },
+  "reason_notFound": {
+    "message": "Not found"
+  },
+  "reason_gone": {
+    "message": "Gone"
+  },
+  "reason_dns": {
+    "message": "Domain doesn't exist"
+  },
+  "reason_server": {
+    "message": "Server error"
+  },
+  "reason_client": {
+    "message": "Unexpected response"
+  },
+  "reason_timeout": {
+    "message": "No response"
+  },
+  "reason_connection": {
+    "message": "Can't connect"
+  },
+  "reason_tls": {
+    "message": "Invalid secure connection"
+  },
+  "reason_redirectLoop": {
+    "message": "Too many redirects"
+  },
+  "reason_network": {
+    "message": "Network error"
+  },
+  "errorOffline": {
+    "message": "You're offline. Connect to the Internet and try again."
+  },
+  "errorPermission": {
+    "message": "Links can't be checked without permission to access the sites."
+  },
+  "errorNothingToCheck": {
+    "message": "There are no web links to check."
+  },
+  "errorGeneric": {
+    "message": "Something went wrong: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorBackup": {
+    "message": "Couldn't create the backup: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorStale": {
+    "message": "changed or was deleted after the check"
+  }
+}
