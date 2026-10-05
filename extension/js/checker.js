@@ -138,7 +138,7 @@ class RequestWorker {
    * @param {string} url
    * @param {'HEAD' | 'GET'} method
    * @param {AbortSignal} signal
-   * @returns {Promise<{ status: number, finalUrl: string } | { failed: true }>}
+   * @returns {Promise<{ status: number, finalUrl: string, contentType: string | null } | { failed: true }>}
    */
   fetch(url, method, signal) {
     const id = this.#nextId++;
@@ -234,6 +234,7 @@ async function attempt({ observer, requests }, url, method, signal) {
       type: 'response',
       status: reply.status,
       finalUrl: reply.finalUrl,
+      contentType: reply.contentType,
       hops: tracked.requestId === null ? null : tracked.hops,
     };
   } finally {

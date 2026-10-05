@@ -6,13 +6,14 @@ import { downloadBackup } from './backup.js';
 import { scanLinks } from './checker.js';
 import { Reason, Verdict } from './classify.js';
 import { collectLinks } from './collect.js';
+import { faviconTargets, refreshFavicons } from './favicons.js';
 import { formatNumber, localizeDocument, t } from './i18n.js';
 import { carryFragment } from './url-utils.js';
 
 // Requested at runtime, on the "Check links" click, instead of at install time.
 const HOST_PERMISSIONS = Object.freeze({ origins: ['http://*/*', 'https://*/*'] });
 const LISTS = [Verdict.UPDATE, Verdict.REMOVE];
-const VIEWS = ['start', 'scan', 'review', 'done'];
+const VIEWS = ['start', 'scan', 'review', 'icons', 'done'];
 
 class OfflineError extends Error {}
 
@@ -24,14 +25,19 @@ class OfflineError extends Error {}
  *   status: number | null,
  *   newUrl: string | null,
  *   suggested: boolean,
+ *   isPage: boolean,
  *   selected: boolean,
  * }} ReviewItem
+ *
+ * @typedef {{ refreshed: number, total: number } | { unavailable: true }} IconsReport
  */
 
 const state = {
   busy: false,
   /** @type {AbortController | null} */
   scan: null,
+  /** @type {AbortController | null} */
+  icons: null,
   /** @type {ReviewItem[]} */
   items: [],
 };
@@ -45,6 +51,7 @@ refreshInventory();
 function bindEvents() {
   $('scan-button').addEventListener('click', startScan);
   $('cancel-button').addEventListener('click', () => state.scan?.abort());
+  $('skip-icons-button').addEventListener('click', () => state.icons?.abort());
   $('backup-button').addEventListener('click', backup);
   $('confirm-backup').addEventListener('click', backup);
   $('apply-button').addEventListener('click', openConfirm);
@@ -200,6 +207,7 @@ function toReviewItem(link, result) {
     status: result.status,
     newUrl: result.newUrl && carryFragment(result.newUrl, link.url),
     suggested: result.suggested,
+    isPage: result.isPage,
     selected: result.suggested,
   };
 }
@@ -220,9 +228,7 @@ function sortForReview(items) {
 }
 
 function renderProgress(progress, tally) {
-  const ratio = progress.total ? progress.done / progress.total : 0;
-  $('progress-fill').style.transform = `scaleX(${ratio})`;
-  $('progress').setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
+  setProgressBar('progress', progress.done, progress.total);
   $('progress-text').textContent = t('scanProgress', [formatNumber(progress.done), formatNumber(progress.total)]);
   $('tally-ok').textContent = formatNumber(tally[Verdict.OK]);
   $('tally-update').textContent = formatNumber(tally[Verdict.UPDATE]);
@@ -373,6 +379,9 @@ function openConfirm() {
   if (updates.length + removals.length === 0) return;
   $('confirm-updates').textContent = formatNumber(updates.length);
   $('confirm-removals').textContent = formatNumber(removals.length);
+  const pages = faviconTargets(updates).length;
+  $('confirm-favicons-option').hidden = pages === 0;
+  $('confirm-favicons-count').textContent = t('confirmFaviconsCount', formatNumber(pages));
   const dialog = $('confirm-dialog');
   dialog.returnValue = '';
   dialog.showModal();
@@ -382,13 +391,19 @@ async function onConfirmClosed() {
   if ($('confirm-dialog').returnValue !== 'confirm' || state.busy) return;
 
   const changes = selectedChanges();
+  const wantIcons = !$('confirm-favicons-option').hidden && $('confirm-favicons').checked;
   const applyButton = $('apply-button');
   setBusy(true);
   applyButton.textContent = t('applyingButton');
 
   let report;
+  let icons = null;
   try {
     report = await applyChanges(changes);
+    if (wantIcons) {
+      const failed = new Set(report.failures.map(({ item }) => item));
+      icons = await refreshIcons(faviconTargets(changes.updates.filter((item) => !failed.has(item))));
+    }
   } catch (error) {
     showNotice(t('errorGeneric', errorMessage(error)));
     return;
@@ -398,12 +413,50 @@ async function onConfirmClosed() {
   }
 
   state.items = [];
-  renderDone(report);
+  renderDone(report, icons);
 }
 
-/** @param {import('./apply.js').ApplyReport} report */
-function renderDone(report) {
+/**
+ * Loads the updated pages so Chrome shows their icons instead of the generic globe.
+ * Best effort: a failure here never hides the result of the changes already applied.
+ * @param {string[]} urls
+ * @returns {Promise<IconsReport | null>}
+ */
+async function refreshIcons(urls) {
+  if (urls.length === 0) return null;
+  const controller = new AbortController();
+  const render = (done) => {
+    setProgressBar('icons-progress', done, urls.length);
+    $('icons-progress-text').textContent = t('iconsProgress', [formatNumber(done), formatNumber(urls.length)]);
+  };
+  state.icons = controller;
+  render(0);
+  showView('icons');
+  try {
+    const refreshed = await refreshFavicons(urls, { signal: controller.signal, onProgress: render });
+    // null: the visits could not be isolated (no website access), so none was made.
+    return refreshed === null ? { unavailable: true } : { refreshed, total: urls.length };
+  } catch (error) {
+    console.warn('EasyMarker: could not refresh icons', error);
+    return null;
+  } finally {
+    state.icons = null;
+  }
+}
+
+/**
+ * @param {import('./apply.js').ApplyReport} report
+ * @param {IconsReport | null} icons
+ */
+function renderDone(report, icons) {
   $('done-summary').textContent = t('doneSummary', [formatNumber(report.updated), formatNumber(report.removed)]);
+  $('done-icons').hidden = icons === null;
+  if (icons) {
+    $('done-icons').textContent =
+      'unavailable' in icons
+        ? t('doneIconsUnavailable')
+        : t('doneIcons', [formatNumber(icons.refreshed), formatNumber(icons.total)]);
+  }
 
   const list = $('failure-list');
   list.replaceChildren(
@@ -426,6 +479,12 @@ async function backup() {
   } catch (error) {
     showNotice(t('errorBackup', errorMessage(error)));
   }
+}
+
+function setProgressBar(id, done, total) {
+  const ratio = total ? done / total : 0;
+  $(`${id}-fill`).style.transform = `scaleX(${ratio})`;
+  $(id).setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
 }
 
 function showView(name) {

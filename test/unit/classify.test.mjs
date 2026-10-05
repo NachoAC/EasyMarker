@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { Reason, Verdict, classify, isRetryableError } from '../../extension/js/classify.js';
+import { Reason, Verdict, classify, isHtml, isRetryableError } from '../../extension/js/classify.js';
 
 const URL_A = 'http://example.com/docs/page';
 
-const response = (status, finalUrl = URL_A, hops = []) => ({ type: 'response', status, finalUrl, hops });
+const response = (status, finalUrl = URL_A, hops = [], contentType = null) => ({
+  type: 'response',
+  status,
+  finalUrl,
+  hops,
+  contentType,
+});
 const hop = (from, to, statusCode) => ({ from, to, statusCode });
 const error = (code) => ({ type: 'error', error: code });
 
@@ -17,6 +23,7 @@ describe('classify: reachable links', () => {
       status: 200,
       newUrl: null,
       suggested: false,
+      isPage: false,
     });
   });
 
@@ -48,6 +55,7 @@ describe('classify: moved links', () => {
       status: 301,
       newUrl: target,
       suggested: true,
+      isPage: false,
     });
   });
 
@@ -136,6 +144,7 @@ describe('classify: broken links', () => {
       status: 404,
       newUrl: null,
       suggested: true,
+      isPage: false,
     });
     assert.equal(classify(URL_A, response(410)).reason, Reason.GONE);
     assert.equal(classify(URL_A, response(410)).suggested, true);
@@ -185,6 +194,31 @@ describe('classify: broken links', () => {
       assert.equal(classify(URL_A, error(code)).verdict, Verdict.UNCHECKED, code);
     }
     assert.equal(classify(URL_A, error('net::ERR_INTERNET_DISCONNECTED')).reason, Reason.OFFLINE);
+  });
+});
+
+describe('isPage', () => {
+  it('is true when the link ends on an HTML page', () => {
+    const target = 'https://example.com/docs/new-page';
+    const result = classify(URL_A, response(200, target, [hop(URL_A, target, 301)], 'text/html; charset=utf-8'));
+    assert.equal(result.isPage, true);
+  });
+
+  it('is false for files, unknown types and errors', () => {
+    assert.equal(classify(URL_A, response(200, URL_A, [], 'application/pdf')).isPage, false);
+    assert.equal(classify(URL_A, response(200, URL_A, [], null)).isPage, false);
+    assert.equal(classify(URL_A, error('net::ERR_NAME_NOT_RESOLVED')).isPage, false);
+  });
+});
+
+describe('isHtml', () => {
+  it('recognises HTML content types only', () => {
+    assert.equal(isHtml('text/html'), true);
+    assert.equal(isHtml('Text/HTML; charset=UTF-8'), true);
+    assert.equal(isHtml('application/xhtml+xml'), true);
+    for (const type of ['application/pdf', 'application/zip', 'text/plain', 'image/png', '', null, undefined]) {
+      assert.equal(isHtml(type), false, String(type));
+    }
   });
 });
 

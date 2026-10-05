@@ -16,7 +16,10 @@ export const PRELOAD_LINKS = [
   `<http://${ASSET_HOST}/logo.png>; rel=preload; as=image`,
 ].join(', ');
 
-/** "host/path" → response. Anything else answers 404 and is reported as unexpected. */
+/**
+ * "host/path" → response. Responses are HTML pages with an icon (/favicon.png) unless
+ * `type` says otherwise. Anything else answers 404 and is reported as unexpected.
+ */
 export const ROUTES = {
   'docs.acme.test/v1/guide': redirect(301, 'http://docs.acme.test/v2/guide'),
   'docs.acme.test/v2/guide': reply(200),
@@ -34,7 +37,7 @@ export const ROUTES = {
   'magazine.test/notes': reply(404),
   'learn.test/course/old': reply(410),
   'forum.test/thread/7': reply(503),
-  'files.test/download': { status: 200, headStatus: 405 },
+  'files.test/download': { status: 200, headStatus: 405, type: 'application/zip' },
   'private.test/area': reply(403),
   'docs.acme.test/rl/getting-started': redirect(301, 'http://docs.acme.test/rl/start'),
   'docs.acme.test/rl/start': reply(200),

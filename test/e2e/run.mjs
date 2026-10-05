@@ -13,15 +13,39 @@ import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { chromium } from 'playwright';
 
-import { BOOKMARKS, DEAD_HOST, HTML_TITLE, PRELOAD_LINKS, READING_LIST, ROUTES } from './fixtures.mjs';
+import { ASSET_HOST, BOOKMARKS, DEAD_HOST, HTML_TITLE, PRELOAD_LINKS, READING_LIST, ROUTES } from './fixtures.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREENSHOTS = process.argv.includes('--screenshots');
 const DARK = process.argv.includes('--dark');
 
 const unexpectedRequests = [];
+const assetRequests = [];
+const ICON = solidPng(16, [220, 38, 38]);
+
+// Every test page is a web page with an icon that also tries everything an icon visit must
+// never do. Each attempt would reach the server on a route it doesn't know, and fail the run.
+const HOSTILE_PAGE = `<!doctype html><title>EasyMarker test</title>
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/app.js"></script>
+<script>
+  fetch('/inline-fetch');
+  document.cookie = 'jscookie=1; path=/';
+  const link = Object.assign(document.createElement('a'), { href: '/file.zip', download: '' });
+  document.documentElement.append(link);
+  link.click();
+  window.open('/popup');
+  setTimeout(() => { location.href = '/navigated-away'; }, 100);
+</script>
+<form action="/form" method="post"><input name="x" value="1"></form>
+<script>document.forms[0].submit();</script>
+<iframe src="/frame"></iframe>
+<img src="/hero.png" alt="">
+<p>Test page`;
 const requestCounts = new Map();
 const server = await startServer();
 const port = server.address().port;
@@ -136,6 +160,7 @@ try {
     // At most HEAD + GET per address (no retries for HTTP answers, no second scan).
     const repeated = [...requestCounts].filter(([, count]) => count > 2);
     assert.deepEqual(repeated, []);
+    assert.deepEqual(assetRequests, [], 'checking links never loads the assets sites advertise');
   });
 
   await step('titles are shown as text, never as HTML', async () => {
@@ -187,10 +212,17 @@ try {
   });
 
   await step('applying asks for confirmation and applies the selection', async () => {
+    // The user is signed in to the sites whose bookmarks are updated.
+    await context.addCookies(
+      ['docs.acme.test', 'billing.acme.test', 'shop.test'].map((domain) => ({ name: 'session', value: 'secret', domain, path: '/' })),
+    );
     await page.click('#apply-button');
     await page.locator('#confirm-dialog').waitFor();
     assert.equal(await page.locator('#confirm-updates').textContent(), '5');
     assert.equal(await page.locator('#confirm-removals').textContent(), '5');
+    assert.equal(await page.locator('#confirm-favicons-option').isVisible(), true);
+    assert.equal(await page.locator('#confirm-favicons').isChecked(), true, 'icon refresh is on by default');
+    assert.equal(await page.locator('#confirm-favicons-count').textContent(), 'Páginas que se abrirán: 5');
     await screenshot(page, 'screenshot-4-confirm');
 
     // Cancel first: nothing happens.
@@ -199,12 +231,46 @@ try {
 
     await page.click('#apply-button');
     await page.click('#confirm-apply');
-    await page.locator('#view-done').waitFor();
+    await page.locator('#view-done').waitFor({ timeout: 60_000 });
     assert.equal(await page.locator('#done-summary').textContent(), 'Actualizados: 4 · Eliminados: 5');
+    assert.equal(await page.locator('#done-icons').textContent(), 'Iconos actualizados: 4 de 4');
     assert.deepEqual(await page.locator('#failure-list li').allTextContents(), [
       'Blog del equipo — ha cambiado o ya no existe desde el análisis',
     ]);
     await screenshot(page, 'screenshot-5-done');
+  });
+
+  await step('updated bookmarks show their icon, not the generic globe', async () => {
+    const icons = await page.evaluate(async (urls) => {
+      const icon = async (pageUrl) => {
+        const response = await fetch(`/_favicon/?pageUrl=${encodeURIComponent(pageUrl)}&size=16`);
+        return new Uint8Array(await response.arrayBuffer()).join();
+      };
+      const globe = await icon('http://never-visited.test/');
+      const result = {};
+      for (const url of urls) result[url] = (await icon(url)) === globe ? 'globe' : 'icon';
+      return { result, windows: (await chrome.windows.getAll()).length };
+    }, [
+      'http://docs.acme.test/v2/guide#auth', // fragment kept: Chrome looks icons up by exact URL
+      'http://billing.acme.test/login?next=%2Fdashboard',
+      'http://shop.test/offers',
+      'http://docs.acme.test/rl/start', // reading list
+      'http://wiki.acme.test/old-page', // not updated: left alone
+    ]);
+    assert.deepEqual(icons.result, {
+      'http://docs.acme.test/v2/guide#auth': 'icon',
+      'http://billing.acme.test/login?next=%2Fdashboard': 'icon',
+      'http://shop.test/offers': 'icon',
+      'http://docs.acme.test/rl/start': 'icon',
+      'http://wiki.acme.test/old-page': 'globe',
+    });
+    assert.equal(icons.windows, 1, 'the icon window is closed afterwards');
+
+    // The visits were anonymous and inert: no cookie was stored, by headers or by script,
+    // and the isolation rules are gone so normal browsing is untouched.
+    const cookies = await context.cookies();
+    assert.deepEqual(cookies.map((cookie) => cookie.name).sort(), ['session', 'session', 'session']);
+    assert.deepEqual(await page.evaluate(() => chrome.declarativeNetRequest.getSessionRules()), []);
   });
 
   await step('bookmarks and reading list end up as expected', async () => {
@@ -275,6 +341,8 @@ async function prepareExtension(dir) {
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   manifest.host_permissions = manifest.optional_host_permissions;
   delete manifest.optional_host_permissions;
+  // Test-only: lets the test read Chrome's favicon cache through /_favicon/.
+  manifest.permissions.push('favicon');
   await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
   return target;
 }
@@ -315,19 +383,57 @@ async function screenshot(page, name) {
 function startServer() {
   const handler = (request, response) => {
     const key = `${request.headers.host}${request.url}`;
+    // Neither the checks nor the icon visits may ever use the user's cookies.
+    if (request.headers.cookie) unexpectedRequests.push(`cookie sent to ${key}: ${request.headers.cookie}`);
+    if (request.headers.host === ASSET_HOST) {
+      // Pages opened to refresh icons may preload these, like any browser tab would.
+      assetRequests.push(`${request.method} ${key}`);
+      response.writeHead(404);
+      return response.end();
+    }
+    if (request.url === '/favicon.png' || request.url === '/hero.png') {
+      response.writeHead(200, { 'Content-Type': 'image/png' });
+      return response.end(ICON);
+    }
+
     requestCounts.set(key, (requestCounts.get(key) ?? 0) + 1);
     const route = ROUTES[key];
     if (!route) unexpectedRequests.push(`${request.method} ${key}`);
-    if (request.headers.cookie) unexpectedRequests.push(`cookie sent to ${key}`);
     const status = route ? (request.method === 'HEAD' && route.headStatus) || route.status : 404;
+    const type = route?.type ?? 'text/html; charset=utf-8';
     response.writeHead(status, {
-      ...(route?.location ? { Location: route.location } : { 'Content-Type': 'text/plain' }),
+      ...(route?.location ? { Location: route.location } : { 'Content-Type': type }),
       Link: PRELOAD_LINKS,
+      'Set-Cookie': 'tracker=1; Path=/',
     });
-    response.end(request.method === 'HEAD' ? undefined : 'EasyMarker test server');
+    if (request.method === 'HEAD') return response.end();
+    response.end(type.startsWith('text/html') ? HOSTILE_PAGE : 'EasyMarker test file');
   };
   return new Promise((resolve) => {
     const server = http.createServer(handler);
     server.listen(0, '127.0.0.1', () => resolve(server));
   });
+}
+
+/** A size×size PNG of one colour: the icon every test page advertises. */
+function solidPng(size, [r, g, b]) {
+  const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: size }, () => [r, g, b, 255]).flat())]);
+  const chunk = (type, data) => {
+    const out = Buffer.alloc(12 + data.length);
+    out.writeUInt32BE(data.length, 0);
+    out.write(type, 4, 'ascii');
+    data.copy(out, 8);
+    out.writeUInt32BE(zlib.crc32(Buffer.concat([Buffer.from(type, 'ascii'), data])), 8 + data.length);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(size, 0);
+  header.writeUInt32BE(size, 4);
+  header.set([8, 6, 0, 0, 0], 8); // 8-bit RGBA
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', zlib.deflateSync(Buffer.concat(Array.from({ length: size }, () => row)))),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }
