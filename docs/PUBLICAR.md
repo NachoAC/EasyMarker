@@ -75,6 +75,8 @@ EasyMarker revisa los marcadores y la lista de lectura de tu perfil de Chrome y 
 
 Antes de cambiar nada te muestra una pantalla de revisión con dos listas, "Para actualizar" y "Para eliminar", donde marcas o desmarcas cada enlace. Los casos dudosos (redirecciones temporales, errores del servidor, enlaces que ahora llevan a la portada) aparecen desmarcados para que decidas tú.
 
+Tras actualizar, recupera los iconos de los marcadores que han cambiado de dirección, para que no se queden con el globo gris.
+
 Privacidad: todo ocurre en tu navegador. EasyMarker no tiene servidores ni analíticas y no envía tus datos a ningún sitio. Las comprobaciones se hacen sin cookies, así que no usa tus sesiones.
 
 Incluye una copia de seguridad de tus marcadores con un clic, en el formato estándar que Chrome puede importar.
@@ -90,6 +92,8 @@ EasyMarker reviews the bookmarks and reading list in your Chrome profile and che
 • If it still works, it leaves it alone.
 
 Before changing anything it shows a review screen with two lists, "To update" and "To remove", where you tick or untick each link. Uncertain cases (temporary redirects, server errors, links that now land on the homepage) start unticked so you decide.
+
+After updating, it brings back the icons of bookmarks that moved, so they don't show the generic globe.
 
 Privacy: everything happens in your browser. EasyMarker has no servers or analytics and never sends your data anywhere. Checks are made without cookies, so your sessions are never used.
 
@@ -113,7 +117,7 @@ Check the links in the user's bookmarks and reading list, and update the ones th
 | `bookmarks` | `Read the user's bookmarks to check their links, and update or remove the bookmarks the user explicitly selects and confirms on the review screen.` |
 | `readingList` | `Read the user's reading list to check its links, and update or remove the entries the user explicitly selects and confirms on the review screen.` |
 | `webRequest` | `Observe only the extension's own link-check requests during a scan, to read each redirect's status code (301 permanent vs 302 temporary) and the exact network error (e.g. ERR_NAME_NOT_RESOLVED for a dead domain), which fetch() does not expose. Listeners are registered only while a scan runs, filter on the extension's own origin, and never block or modify requests.` |
-| Permiso de host (`http://*/*`, `https://*/*`, opcional) | `Bookmarks can point to any website, so checking whether a link still works requires requesting that URL. The permission is optional and requested at runtime when the user clicks "Check links". Requests are anonymous (no cookies, no referrer) and only the HTTP status is read; the response body is discarded.` |
+| Permiso de host (`http://*/*`, `https://*/*`, opcional) | `Bookmarks can point to any website, so checking whether a link still works requires requesting that URL. The permission is optional and requested at runtime when the user clicks "Check links". Requests are anonymous (no cookies, no referrer) and only the HTTP status is read; the response body is discarded. Optionally, after applying changes, each updated page is opened once in a minimized background tab so Chrome caches its favicon; host access lets the extension see when the icon has loaded so the tab can be closed.` |
 
 **Código remoto (*Remote code*):** *No, no uso código remoto*. Todo el JavaScript va dentro del paquete.
 

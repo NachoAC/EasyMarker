@@ -6,10 +6,10 @@
 // each attempt is logged as an error. A worker has no document, so Chrome ignores them.
 //
 // Protocol (postMessage):
-//   page → worker  { type: 'fetch', id, url, method }   start a request
-//   page → worker  { type: 'abort', id }                cancel it
-//   worker → page  { id, status, finalUrl }             response headers received
-//   worker → page  { id, failed: true }                 network error or aborted
+//   page → worker  { type: 'fetch', id, url, method }       start a request
+//   page → worker  { type: 'abort', id }                    cancel it
+//   worker → page  { id, status, finalUrl, contentType }    response headers received
+//   worker → page  { id, failed: true }                     network error or aborted
 
 /** @type {Map<number, AbortController>} */
 const controllers = new Map();
@@ -34,9 +34,14 @@ self.addEventListener('message', async ({ data }) => {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
-    // Only the status matters: drop the body instead of downloading it.
+    // Only the status and headers matter: drop the body instead of downloading it.
     response.body?.cancel().catch(() => {});
-    self.postMessage({ id, status: response.status, finalUrl: response.url });
+    self.postMessage({
+      id,
+      status: response.status,
+      finalUrl: response.url,
+      contentType: response.headers.get('content-type'),
+    });
   } catch {
     self.postMessage({ id, failed: true });
   } finally {

@@ -63,7 +63,7 @@ const LOCAL_ERRORS = new Set([
  * @typedef {{ from: string, to: string, statusCode: number }} Hop
  *
  * @typedef {(
- *   | { type: 'response', status: number, finalUrl: string, hops: Hop[] | null }
+ *   | { type: 'response', status: number, finalUrl: string, contentType?: string | null, hops: Hop[] | null }
  *   | { type: 'error', error: string }
  * )} Outcome
  * `hops` is null when the redirect chain could not be observed.
@@ -74,8 +74,10 @@ const LOCAL_ERRORS = new Set([
  *   status: number | null,
  *   newUrl: string | null,
  *   suggested: boolean,
+ *   isPage: boolean,
  * }} CheckResult
  * `suggested` means "pre-select this change in the review screen".
+ * `isPage` means the link ends on an HTML page (not a PDF, a download…).
  */
 
 /**
@@ -84,8 +86,22 @@ const LOCAL_ERRORS = new Set([
  * @returns {CheckResult}
  */
 export function classify(requestUrl, outcome) {
-  if (outcome.type === 'error') return classifyError(outcome.error);
+  if (outcome.type === 'error') return { ...classifyError(outcome.error), isPage: false };
+  return { ...classifyResponse(requestUrl, outcome), isPage: isHtml(outcome.contentType) };
+}
 
+/** @param {string | null | undefined} contentType */
+export function isHtml(contentType) {
+  const type = contentType?.split(';')[0].trim().toLowerCase();
+  return type === 'text/html' || type === 'application/xhtml+xml';
+}
+
+/**
+ * @param {string} requestUrl
+ * @param {Extract<Outcome, { type: 'response' }>} outcome
+ * @returns {Omit<CheckResult, 'isPage'>}
+ */
+function classifyResponse(requestUrl, outcome) {
   const { status } = outcome;
   if (status === 404) return result(Verdict.REMOVE, Reason.NOT_FOUND, status, true);
   if (status === 410) return result(Verdict.REMOVE, Reason.GONE, status, true);
@@ -105,7 +121,7 @@ export function isRetryableError(error) {
 /**
  * @param {string} requestUrl
  * @param {{ status: number, finalUrl: string, hops: Hop[] | null }} outcome
- * @returns {CheckResult}
+ * @returns {Omit<CheckResult, 'isPage'>}
  */
 function classifyReachable(requestUrl, { status, finalUrl, hops }) {
   const finalRequestUrl = stripFragment(finalUrl);
@@ -158,7 +174,10 @@ function permanentTarget(requestUrl, hops) {
   return target === requestUrl ? null : target;
 }
 
-/** @param {string} error */
+/**
+ * @param {string} error
+ * @returns {Omit<CheckResult, 'isPage'>}
+ */
 function classifyError(error) {
   const reason = errorReason(error);
   switch (reason) {
@@ -190,7 +209,7 @@ function errorReason(error) {
  * @param {number | null} status
  * @param {boolean} suggested
  * @param {string | null} [newUrl]
- * @returns {CheckResult}
+ * @returns {Omit<CheckResult, 'isPage'>}
  */
 function result(verdict, reason, status, suggested, newUrl = null) {
   return { verdict, reason, status, newUrl, suggested };

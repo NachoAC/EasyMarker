@@ -8,6 +8,8 @@ Extensión de Chrome que revisa los **marcadores** y la **lista de lectura** del
 
 Antes de tocar nada muestra una pantalla de revisión con dos listas, *Para actualizar* y *Para eliminar*. Puedes marcar o desmarcar cada elemento y, al final, confirmar los cambios.
 
+Después de actualizar, recupera los **iconos** de los marcadores que han cambiado de dirección, para que no se queden con el globo gris genérico (ver más abajo).
+
 ![Pantalla de revisión](store/screenshot-2-update.png)
 
 ## Cómo decide qué hacer con cada enlace
@@ -28,11 +30,23 @@ Más detalles:
 - Conserva el `#fragmento` del marcador (`/guia#instalar` → `/guia-nueva#instalar`).
 - Cada dirección se comprueba una sola vez aunque esté en varios marcadores.
 - Usa `HEAD` y, si falla, repite con `GET` (muchos servidores no admiten `HEAD`). Los errores de red se reintentan una vez.
+
+### Iconos de los marcadores actualizados
+
+Chrome guarda el icono de cada página según su dirección exacta, y solo lo descarga cuando visitas esa página. Por eso un marcador que cambia de dirección muestra el globo gris hasta que lo abres, y ninguna API permite a una extensión asignar ese icono.
+
+EasyMarker hace lo mismo que harías tú a mano:
+- Tras aplicar los cambios, abre cada dirección nueva una vez en una ventana minimizada y sin foco, con las pestañas silenciadas, tres a la vez.
+- Cierra cada pestaña en cuanto Chrome tiene el icono.
+- Abre la URL exacta del marcador, `#fragmento` incluido, porque es la clave con la que Chrome busca el icono.
+- Solo abre páginas web (`text/html`), nunca PDFs ni descargas.
+
+Se puede desactivar en el diálogo de confirmación y omitir mientras se ejecuta. Es una visita normal: usa tus cookies y queda en el historial.
 - Se omiten los enlaces que no son web (`javascript:`, `chrome://`, `file://`…) y los marcadores gestionados por la organización.
 
 ## Seguridad y privacidad
 
-- **Nada sale de tu navegador.** No hay servidores, analíticas ni código remoto. La única actividad de red son las propias peticiones a los enlaces que se comprueban.
+- **Nada sale de tu navegador.** No hay servidores, analíticas ni código remoto. La única actividad de red son las peticiones a los enlaces que se comprueban y, si la dejas activada, la visita a las páginas actualizadas para recuperar su icono.
 - **Peticiones anónimas:** sin cookies (`credentials: 'omit'`), sin `Referer` y sin caché. Así no se usa tu sesión en ningún sitio ni se producen efectos secundarios.
 - **Peticiones aisladas en un worker.** Muchas webs anuncian fuentes, estilos y scripts con cabeceras `Link: rel=preload`. Si la comprobación se hiciera desde la página, Chrome intentaría precargarlos dentro de la extensión; la CSP lo bloquearía, pero llenaría de errores `chrome://extensions`. Desde un worker esas cabeceras se ignoran y nunca se carga nada de los sitios comprobados.
 - **Permisos mínimos.** El acceso a los sitios web (`http://*/*`, `https://*/*`) es *opcional*: Chrome lo pide la primera vez que pulsas *Analizar enlaces*, no al instalar. Los listeners de `webRequest` solo están activos durante un análisis y solo atienden las peticiones de la propia extensión.
@@ -80,6 +94,7 @@ extension/
   js/collect.js        recoge marcadores y lista de lectura
   js/checker.js        comprueba los enlaces (fetch + webRequest para ver cada redirección)
   js/fetch-worker.js   hace las peticiones fuera de la página (ver «Seguridad y privacidad»)
+  js/favicons.js       recupera los iconos de los marcadores actualizados
   js/classify.js       decide qué proponer para cada enlace (lógica pura, con tests)
   js/pool.js           concurrencia limitada (8 en total, 2 por sitio)
   js/apply.js          aplica los cambios confirmados

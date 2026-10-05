@@ -234,5 +234,42 @@
   },
   "errorStale": {
     "message": "changed or was deleted after the check"
+  },
+  "confirmFavicons": {
+    "message": "Also refresh the icons"
+  },
+  "confirmFaviconsHint": {
+    "message": "Chrome only stores a page’s icon when you visit it. EasyMarker will open each new address for a few seconds in a minimized, muted window; it will show up in your history like any visit."
+  },
+  "iconsTitle": {
+    "message": "Refreshing icons…"
+  },
+  "iconsProgress": {
+    "message": "$DONE$ of $TOTAL$ pages",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "iconsHint": {
+    "message": "Pages open briefly in a minimized window. Please don’t close it."
+  },
+  "skipButton": {
+    "message": "Skip"
+  },
+  "doneIcons": {
+    "message": "Icons refreshed: $REFRESHED$ of $TOTAL$",
+    "placeholders": {
+      "refreshed": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
   }
 }

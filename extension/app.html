@@ -115,10 +115,22 @@
         </section>
       </section>
 
+      <section class="view view-center" id="view-icons" aria-labelledby="icons-title" hidden>
+        <h1 id="icons-title" tabindex="-1" data-i18n="iconsTitle"></h1>
+        <div class="progress" id="icons-progress" role="progressbar" aria-labelledby="icons-title"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-fill" id="icons-progress-fill"></div>
+        </div>
+        <p class="progress-text" id="icons-progress-text"></p>
+        <button type="button" class="btn btn-ghost" id="skip-icons-button" data-i18n="skipButton"></button>
+        <p class="hint" data-i18n="iconsHint"></p>
+      </section>
+
       <section class="view view-center" id="view-done" aria-labelledby="done-title" hidden>
         <div class="done-mark" aria-hidden="true"><svg class="icon"><use href="#i-check" /></svg></div>
         <h1 id="done-title" tabindex="-1" data-i18n="doneTitle"></h1>
         <p class="lead" id="done-summary"></p>
+        <p class="muted" id="done-icons" hidden></p>
         <div class="failures" id="done-failures" hidden>
           <h2 data-i18n="doneFailuresTitle"></h2>
           <ul id="failure-list"></ul>
@@ -144,6 +156,13 @@
           <div><dt data-i18n="tabUpdate"></dt><dd id="confirm-updates">0</dd></div>
           <div><dt data-i18n="tabRemove"></dt><dd id="confirm-removals">0</dd></div>
         </dl>
+        <label class="dialog-option" id="confirm-favicons-option">
+          <input type="checkbox" id="confirm-favicons" checked>
+          <span>
+            <strong data-i18n="confirmFavicons"></strong>
+            <span class="hint" data-i18n="confirmFaviconsHint"></span>
+          </span>
+        </label>
         <p class="hint" data-i18n="confirmWarning"></p>
         <div class="dialog-actions">
           <button type="button" class="btn btn-ghost" id="confirm-backup">

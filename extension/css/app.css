@@ -696,6 +696,30 @@ dialog form {
   font-variant-numeric: tabular-nums;
 }
 
+.dialog-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.dialog-option input {
+  margin-top: 2px;
+}
+
+.dialog-option > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dialog-option .hint {
+  max-width: none;
+}
+
 .dialog-actions {
   display: flex;
   flex-wrap: wrap;
