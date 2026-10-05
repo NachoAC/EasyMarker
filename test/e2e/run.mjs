@@ -15,7 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-import { BOOKMARKS, DEAD_HOST, READING_LIST, ROUTES, HTML_TITLE } from './fixtures.mjs';
+import { BOOKMARKS, DEAD_HOST, HTML_TITLE, PRELOAD_LINKS, READING_LIST, ROUTES } from './fixtures.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREENSHOTS = process.argv.includes('--screenshots');
@@ -320,7 +320,10 @@ function startServer() {
     if (!route) unexpectedRequests.push(`${request.method} ${key}`);
     if (request.headers.cookie) unexpectedRequests.push(`cookie sent to ${key}`);
     const status = route ? (request.method === 'HEAD' && route.headStatus) || route.status : 404;
-    response.writeHead(status, route?.location ? { Location: route.location } : { 'Content-Type': 'text/plain' });
+    response.writeHead(status, {
+      ...(route?.location ? { Location: route.location } : { 'Content-Type': 'text/plain' }),
+      Link: PRELOAD_LINKS,
+    });
     response.end(request.method === 'HEAD' ? undefined : 'EasyMarker test server');
   };
   return new Promise((resolve) => {
