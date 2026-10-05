@@ -34,6 +34,7 @@ Más detalles:
 
 - **Nada sale de tu navegador.** No hay servidores, analíticas ni código remoto. La única actividad de red son las propias peticiones a los enlaces que se comprueban.
 - **Peticiones anónimas:** sin cookies (`credentials: 'omit'`), sin `Referer` y sin caché. Así no se usa tu sesión en ningún sitio ni se producen efectos secundarios.
+- **Peticiones aisladas en un worker.** Muchas webs anuncian fuentes, estilos y scripts con cabeceras `Link: rel=preload`. Si la comprobación se hiciera desde la página, Chrome intentaría precargarlos dentro de la extensión; la CSP lo bloquearía, pero llenaría de errores `chrome://extensions`. Desde un worker esas cabeceras se ignoran y nunca se carga nada de los sitios comprobados.
 - **Permisos mínimos.** El acceso a los sitios web (`http://*/*`, `https://*/*`) es *opcional*: Chrome lo pide la primera vez que pulsas *Analizar enlaces*, no al instalar. Los listeners de `webRequest` solo están activos durante un análisis y solo atienden las peticiones de la propia extensión.
 - **CSP estricta** (`script-src 'self'`, `object-src 'none'`…). Los títulos y URLs se pintan siempre con `textContent`, nunca como HTML; ESLint lo vigila (`innerHTML` está prohibido).
 - **Escritura defensiva:** antes de cambiar o borrar un elemento se vuelve a leer y, si ha cambiado desde el análisis, no se toca. Nunca se guarda una dirección que no sea `http(s)`.
@@ -78,6 +79,7 @@ extension/
   js/app.js            controlador de la interfaz: inicio → análisis → revisión → hecho
   js/collect.js        recoge marcadores y lista de lectura
   js/checker.js        comprueba los enlaces (fetch + webRequest para ver cada redirección)
+  js/fetch-worker.js   hace las peticiones fuera de la página (ver «Seguridad y privacidad»)
   js/classify.js       decide qué proponer para cada enlace (lógica pura, con tests)
   js/pool.js           concurrencia limitada (8 en total, 2 por sitio)
   js/apply.js          aplica los cambios confirmados

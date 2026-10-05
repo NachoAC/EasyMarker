@@ -6,6 +6,16 @@ export const DEAD_HOST = 'abandoned-project.test';
 const redirect = (status, location) => ({ status, location });
 const reply = (status) => ({ status });
 
+// Like many real sites (Next.js, Shopify…), every response advertises assets to preload.
+// The extension must never act on them: no request to ASSET_HOST, no CSP errors.
+export const ASSET_HOST = 'assets.cdn.test';
+export const PRELOAD_LINKS = [
+  `<http://${ASSET_HOST}/font.woff2>; rel=preload; as=font; type="font/woff2"; crossorigin`,
+  `<http://${ASSET_HOST}/style.css>; rel=preload; as=style`,
+  `<http://${ASSET_HOST}/app.js>; rel=preload; as=script`,
+  `<http://${ASSET_HOST}/logo.png>; rel=preload; as=image`,
+].join(', ');
+
 /** "host/path" → response. Anything else answers 404 and is reported as unexpected. */
 export const ROUTES = {
   'docs.acme.test/v1/guide': redirect(301, 'http://docs.acme.test/v2/guide'),

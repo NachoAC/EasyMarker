@@ -4,6 +4,9 @@
 // (301 "moved" vs 302 "temporarily elsewhere") and the exact network error
 // (a domain that no longer exists vs a server that is just down). Both are visible
 // through chrome.webRequest, so while a scan runs we observe our own requests.
+//
+// The requests themselves run in a dedicated worker (fetch-worker.js): from a document,
+// Chrome would act on the `Link: rel=preload` headers of the checked sites.
 
 import { classify, isRetryableError } from './classify.js';
 import { runPool } from './pool.js';
@@ -111,6 +114,56 @@ class RequestObserver {
   }
 }
 
+/** Page-side client for fetch-worker.js. */
+class RequestWorker {
+  #worker = new Worker(new URL('./fetch-worker.js', import.meta.url));
+  /** @type {Map<number, { resolve: (reply: object) => void, reject: (error: Error) => void }>} */
+  #pending = new Map();
+  #nextId = 0;
+
+  constructor() {
+    this.#worker.addEventListener('message', ({ data }) => {
+      this.#pending.get(data.id)?.resolve(data);
+      this.#pending.delete(data.id);
+    });
+    this.#worker.addEventListener('error', (event) => {
+      event.preventDefault();
+      this.#failAll(new Error(`Link checker worker failed: ${event.message}`));
+    });
+  }
+
+  /**
+   * Requests `url` and resolves once the response headers arrive.
+   * Aborting `signal` cancels the request; it then resolves as failed.
+   * @param {string} url
+   * @param {'HEAD' | 'GET'} method
+   * @param {AbortSignal} signal
+   * @returns {Promise<{ status: number, finalUrl: string } | { failed: true }>}
+   */
+  fetch(url, method, signal) {
+    const id = this.#nextId++;
+    const abort = () => this.#worker.postMessage({ type: 'abort', id });
+    return new Promise((resolve, reject) => {
+      this.#pending.set(id, { resolve, reject });
+      this.#worker.postMessage({ type: 'fetch', id, url, method });
+      if (signal.aborted) abort();
+      else signal.addEventListener('abort', abort, { once: true });
+    }).finally(() => signal.removeEventListener('abort', abort));
+  }
+
+  terminate() {
+    this.#worker.terminate();
+    this.#failAll(new Error('Link checker worker stopped'));
+  }
+
+  #failAll(error) {
+    for (const { reject } of this.#pending.values()) reject(error);
+    this.#pending.clear();
+  }
+}
+
+/** @typedef {{ observer: RequestObserver, requests: RequestWorker }} Network */
+
 /**
  * Checks every link and reports each result as soon as it is known.
  * Links sharing the same address are checked once.
@@ -121,76 +174,68 @@ class RequestObserver {
  */
 export async function scanLinks(links, { signal, onResult }) {
   const byUrl = Map.groupBy(links, (link) => link.requestUrl);
-  const observer = new RequestObserver();
-  observer.start();
+  /** @type {Network} */
+  const network = { observer: new RequestObserver(), requests: new RequestWorker() };
+  network.observer.start();
   try {
     await runPool(
       byUrl.keys(),
       async (url) => {
-        const result = await checkUrl(observer, url, signal);
+        const result = await checkUrl(network, url, signal);
         onResult(result, byUrl.get(url));
       },
       { concurrency: CONCURRENCY, perGroup: PER_HOST, groupOf: hostOf, signal },
     );
   } finally {
-    observer.stop();
+    network.observer.stop();
+    network.requests.terminate();
   }
 }
 
 /**
- * @param {RequestObserver} observer
+ * @param {Network} network
  * @param {string} url
  * @param {AbortSignal} signal
  * @returns {Promise<CheckResult>}
  */
-async function checkUrl(observer, url, signal) {
+async function checkUrl(network, url, signal) {
   // HEAD is cheap, but many servers reject or mishandle it: confirm any failure with GET.
-  let outcome = await attempt(observer, url, 'HEAD', signal);
+  let outcome = await attempt(network, url, 'HEAD', signal);
   if (outcome.type === 'error' || outcome.status >= 400) {
-    outcome = await attempt(observer, url, 'GET', signal);
+    outcome = await attempt(network, url, 'GET', signal);
     if (outcome.type === 'error' && isRetryableError(outcome.error)) {
       await sleep(RETRY_DELAY_MS, signal);
-      outcome = await attempt(observer, url, 'GET', signal);
+      outcome = await attempt(network, url, 'GET', signal);
     }
   }
   return classify(url, outcome);
 }
 
 /**
- * @param {RequestObserver} observer
+ * @param {Network} network
  * @param {string} url
  * @param {'HEAD' | 'GET'} method
  * @param {AbortSignal} signal
  * @returns {Promise<Outcome>}
  */
-async function attempt(observer, url, method, signal) {
+async function attempt({ observer, requests }, url, method, signal) {
   const tracked = observer.track(url, method);
   const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(url, {
-      method,
-      signal: AbortSignal.any([signal, timeout]),
-      redirect: 'follow',
-      // Anonymous, uncached request: no cookies are sent (so no session side effects)
-      // and the target site isn't told where the request came from.
-      credentials: 'omit',
-      cache: 'no-store',
-      referrerPolicy: 'no-referrer',
-    });
-    // Only the status matters: drop the body instead of downloading it.
-    response.body?.cancel().catch(() => {});
+    const reply = await requests.fetch(url, method, AbortSignal.any([signal, timeout]));
+    signal.throwIfAborted();
+    if ('failed' in reply) {
+      if (timeout.aborted) return { type: 'error', error: 'timeout' };
+      await settledWithin(tracked, OBSERVER_GRACE_MS);
+      return { type: 'error', error: tracked.terminal?.error ?? 'net::ERR_FAILED' };
+    }
     await settledWithin(tracked, OBSERVER_GRACE_MS);
     return {
       type: 'response',
-      status: response.status,
-      finalUrl: response.url,
+      status: reply.status,
+      finalUrl: reply.finalUrl,
       hops: tracked.requestId === null ? null : tracked.hops,
     };
-  } catch {
-    signal.throwIfAborted();
-    if (timeout.aborted) return { type: 'error', error: 'timeout' };
-    await settledWithin(tracked, OBSERVER_GRACE_MS);
-    return { type: 'error', error: tracked.terminal?.error ?? 'net::ERR_FAILED' };
   } finally {
     observer.untrack(tracked);
   }
