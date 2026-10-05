@@ -28,6 +28,8 @@ class OfflineError extends Error {}
  *   isPage: boolean,
  *   selected: boolean,
  * }} ReviewItem
+ *
+ * @typedef {{ refreshed: number, total: number } | { unavailable: true }} IconsReport
  */
 
 const state = {
@@ -377,7 +379,9 @@ function openConfirm() {
   if (updates.length + removals.length === 0) return;
   $('confirm-updates').textContent = formatNumber(updates.length);
   $('confirm-removals').textContent = formatNumber(removals.length);
-  $('confirm-favicons-option').hidden = faviconTargets(updates).length === 0;
+  const pages = faviconTargets(updates).length;
+  $('confirm-favicons-option').hidden = pages === 0;
+  $('confirm-favicons-count').textContent = t('confirmFaviconsCount', formatNumber(pages));
   const dialog = $('confirm-dialog');
   dialog.returnValue = '';
   dialog.showModal();
@@ -416,7 +420,7 @@ async function onConfirmClosed() {
  * Loads the updated pages so Chrome shows their icons instead of the generic globe.
  * Best effort: a failure here never hides the result of the changes already applied.
  * @param {string[]} urls
- * @returns {Promise<{ refreshed: number, total: number } | null>}
+ * @returns {Promise<IconsReport | null>}
  */
 async function refreshIcons(urls) {
   if (urls.length === 0) return null;
@@ -430,7 +434,8 @@ async function refreshIcons(urls) {
   showView('icons');
   try {
     const refreshed = await refreshFavicons(urls, { signal: controller.signal, onProgress: render });
-    return { refreshed, total: urls.length };
+    // null: the visits could not be isolated (no website access), so none was made.
+    return refreshed === null ? { unavailable: true } : { refreshed, total: urls.length };
   } catch (error) {
     console.warn('EasyMarker: could not refresh icons', error);
     return null;
@@ -441,13 +446,16 @@ async function refreshIcons(urls) {
 
 /**
  * @param {import('./apply.js').ApplyReport} report
- * @param {{ refreshed: number, total: number } | null} icons
+ * @param {IconsReport | null} icons
  */
 function renderDone(report, icons) {
   $('done-summary').textContent = t('doneSummary', [formatNumber(report.updated), formatNumber(report.removed)]);
   $('done-icons').hidden = icons === null;
   if (icons) {
-    $('done-icons').textContent = t('doneIcons', [formatNumber(icons.refreshed), formatNumber(icons.total)]);
+    $('done-icons').textContent =
+      'unavailable' in icons
+        ? t('doneIconsUnavailable')
+        : t('doneIcons', [formatNumber(icons.refreshed), formatNumber(icons.total)]);
   }
 
   const list = $('failure-list');

@@ -239,7 +239,7 @@
     "message": "Also refresh the icons"
   },
   "confirmFaviconsHint": {
-    "message": "Chrome only stores a page’s icon when you visit it. EasyMarker will open each new address for a few seconds in a minimized, muted window; it will show up in your history like any visit."
+    "message": "Chrome only stores a page’s icon when you visit it. EasyMarker will open each new address for a few seconds in a minimized window, anonymously (without your cookies) and without running its code. The visit will show up in your history."
   },
   "iconsTitle": {
     "message": "Refreshing icons…"
@@ -271,5 +271,16 @@
         "content": "$2"
       }
     }
+  },
+  "confirmFaviconsCount": {
+    "message": "Pages to open: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "doneIconsUnavailable": {
+    "message": "Icons not refreshed: website access permission is required."
   }
 }

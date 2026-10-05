@@ -30,6 +30,7 @@ Más detalles:
 - Conserva el `#fragmento` del marcador (`/guia#instalar` → `/guia-nueva#instalar`).
 - Cada dirección se comprueba una sola vez aunque esté en varios marcadores.
 - Usa `HEAD` y, si falla, repite con `GET` (muchos servidores no admiten `HEAD`). Los errores de red se reintentan una vez.
+- Se omiten los enlaces que no son web (`javascript:`, `chrome://`, `file://`…) y los marcadores gestionados por la organización.
 
 ### Iconos de los marcadores actualizados
 
@@ -41,12 +42,18 @@ EasyMarker hace lo mismo que harías tú a mano:
 - Abre la URL exacta del marcador, `#fragmento` incluido, porque es la clave con la que Chrome busca el icono.
 - Solo abre páginas web (`text/html`), nunca PDFs ni descargas.
 
-Se puede desactivar en el diálogo de confirmación y omitir mientras se ejecuta. Es una visita normal: usa tus cookies y queda en el historial.
-- Se omiten los enlaces que no son web (`javascript:`, `chrome://`, `file://`…) y los marcadores gestionados por la organización.
+Esas visitas están **aisladas** con reglas `declarativeNetRequest` que solo afectan a esas pestañas y solo mientras están abiertas:
+- **Anónimas:** no se envían cookies ni se guarda ninguna. Tus sesiones nunca se usan, así que ningún enlace de «cerrar sesión» o «darse de baja» puede actuar sobre tu cuenta.
+- **Inertes:** una cabecera CSP `sandbox` desactiva todo el JavaScript (también el escrito en el propio HTML), los formularios, las ventanas emergentes y las descargas.
+- **Ligeras:** scripts, estilos, fuentes, iframes, vídeo y peticiones en segundo plano ni siquiera se descargan. Solo se cargan el HTML y sus imágenes, porque el icono es una de ellas.
+
+Sin permiso de acceso a los sitios esas reglas no funcionarían, y entonces no se abre ninguna página.
+
+El diálogo de confirmación indica cuántas páginas se abrirán; desde ahí se puede desactivar y, mientras se ejecuta, omitir. Las visitas quedan en el historial de Chrome. Los iconos que una web pone con JavaScript no se pueden recuperar así, y esos marcadores mantienen el globo hasta que los abras.
 
 ## Seguridad y privacidad
 
-- **Nada sale de tu navegador.** No hay servidores, analíticas ni código remoto. La única actividad de red son las peticiones a los enlaces que se comprueban y, si la dejas activada, la visita a las páginas actualizadas para recuperar su icono.
+- **Nada sale de tu navegador.** No hay servidores, analíticas ni código remoto. La única actividad de red son las peticiones a los enlaces que se comprueban y, si la dejas activada, la visita aislada (anónima y sin ejecutar código) a las páginas actualizadas para recuperar su icono.
 - **Peticiones anónimas:** sin cookies (`credentials: 'omit'`), sin `Referer` y sin caché. Así no se usa tu sesión en ningún sitio ni se producen efectos secundarios.
 - **Peticiones aisladas en un worker.** Muchas webs anuncian fuentes, estilos y scripts con cabeceras `Link: rel=preload`. Si la comprobación se hiciera desde la página, Chrome intentaría precargarlos dentro de la extensión; la CSP lo bloquearía, pero llenaría de errores `chrome://extensions`. Desde un worker esas cabeceras se ignoran y nunca se carga nada de los sitios comprobados.
 - **Permisos mínimos.** El acceso a los sitios web (`http://*/*`, `https://*/*`) es *opcional*: Chrome lo pide la primera vez que pulsas *Analizar enlaces*, no al instalar. Los listeners de `webRequest` solo están activos durante un análisis y solo atienden las peticiones de la propia extensión.

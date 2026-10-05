@@ -239,7 +239,7 @@
     "message": "Actualizar también los iconos"
   },
   "confirmFaviconsHint": {
-    "message": "Chrome solo guarda el icono de una página al visitarla. EasyMarker abrirá cada dirección nueva unos segundos en una ventana minimizada y silenciada; quedará en tu historial como cualquier visita."
+    "message": "Chrome solo guarda el icono de una página al visitarla. EasyMarker abrirá cada dirección nueva unos segundos en una ventana minimizada, de forma anónima (sin tus cookies) y sin ejecutar su código. La visita quedará en tu historial."
   },
   "iconsTitle": {
     "message": "Actualizando iconos…"
@@ -271,5 +271,16 @@
         "content": "$2"
       }
     }
+  },
+  "confirmFaviconsCount": {
+    "message": "Páginas que se abrirán: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "doneIconsUnavailable": {
+    "message": "Iconos no actualizados: hace falta el permiso de acceso a los sitios web."
   }
 }

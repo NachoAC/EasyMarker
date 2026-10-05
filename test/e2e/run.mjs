@@ -25,6 +25,27 @@ const DARK = process.argv.includes('--dark');
 const unexpectedRequests = [];
 const assetRequests = [];
 const ICON = solidPng(16, [220, 38, 38]);
+
+// Every test page is a web page with an icon that also tries everything an icon visit must
+// never do. Each attempt would reach the server on a route it doesn't know, and fail the run.
+const HOSTILE_PAGE = `<!doctype html><title>EasyMarker test</title>
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/app.js"></script>
+<script>
+  fetch('/inline-fetch');
+  document.cookie = 'jscookie=1; path=/';
+  const link = Object.assign(document.createElement('a'), { href: '/file.zip', download: '' });
+  document.documentElement.append(link);
+  link.click();
+  window.open('/popup');
+  setTimeout(() => { location.href = '/navigated-away'; }, 100);
+</script>
+<form action="/form" method="post"><input name="x" value="1"></form>
+<script>document.forms[0].submit();</script>
+<iframe src="/frame"></iframe>
+<img src="/hero.png" alt="">
+<p>Test page`;
 const requestCounts = new Map();
 const server = await startServer();
 const port = server.address().port;
@@ -191,12 +212,17 @@ try {
   });
 
   await step('applying asks for confirmation and applies the selection', async () => {
+    // The user is signed in to the sites whose bookmarks are updated.
+    await context.addCookies(
+      ['docs.acme.test', 'billing.acme.test', 'shop.test'].map((domain) => ({ name: 'session', value: 'secret', domain, path: '/' })),
+    );
     await page.click('#apply-button');
     await page.locator('#confirm-dialog').waitFor();
     assert.equal(await page.locator('#confirm-updates').textContent(), '5');
     assert.equal(await page.locator('#confirm-removals').textContent(), '5');
     assert.equal(await page.locator('#confirm-favicons-option').isVisible(), true);
     assert.equal(await page.locator('#confirm-favicons').isChecked(), true, 'icon refresh is on by default');
+    assert.equal(await page.locator('#confirm-favicons-count').textContent(), 'Páginas que se abrirán: 5');
     await screenshot(page, 'screenshot-4-confirm');
 
     // Cancel first: nothing happens.
@@ -239,6 +265,12 @@ try {
       'http://wiki.acme.test/old-page': 'globe',
     });
     assert.equal(icons.windows, 1, 'the icon window is closed afterwards');
+
+    // The visits were anonymous and inert: no cookie was stored, by headers or by script,
+    // and the isolation rules are gone so normal browsing is untouched.
+    const cookies = await context.cookies();
+    assert.deepEqual(cookies.map((cookie) => cookie.name).sort(), ['session', 'session', 'session']);
+    assert.deepEqual(await page.evaluate(() => chrome.declarativeNetRequest.getSessionRules()), []);
   });
 
   await step('bookmarks and reading list end up as expected', async () => {
@@ -351,13 +383,15 @@ async function screenshot(page, name) {
 function startServer() {
   const handler = (request, response) => {
     const key = `${request.headers.host}${request.url}`;
+    // Neither the checks nor the icon visits may ever use the user's cookies.
+    if (request.headers.cookie) unexpectedRequests.push(`cookie sent to ${key}: ${request.headers.cookie}`);
     if (request.headers.host === ASSET_HOST) {
       // Pages opened to refresh icons may preload these, like any browser tab would.
       assetRequests.push(`${request.method} ${key}`);
       response.writeHead(404);
       return response.end();
     }
-    if (request.url === '/favicon.png') {
+    if (request.url === '/favicon.png' || request.url === '/hero.png') {
       response.writeHead(200, { 'Content-Type': 'image/png' });
       return response.end(ICON);
     }
@@ -365,19 +399,15 @@ function startServer() {
     requestCounts.set(key, (requestCounts.get(key) ?? 0) + 1);
     const route = ROUTES[key];
     if (!route) unexpectedRequests.push(`${request.method} ${key}`);
-    if (request.headers.cookie) unexpectedRequests.push(`cookie sent to ${key}`);
     const status = route ? (request.method === 'HEAD' && route.headStatus) || route.status : 404;
     const type = route?.type ?? 'text/html; charset=utf-8';
     response.writeHead(status, {
       ...(route?.location ? { Location: route.location } : { 'Content-Type': type }),
       Link: PRELOAD_LINKS,
+      'Set-Cookie': 'tracker=1; Path=/',
     });
     if (request.method === 'HEAD') return response.end();
-    response.end(
-      type.startsWith('text/html')
-        ? '<!doctype html><title>EasyMarker test</title><link rel="icon" href="/favicon.png"><p>Test page'
-        : 'EasyMarker test file',
-    );
+    response.end(type.startsWith('text/html') ? HOSTILE_PAGE : 'EasyMarker test file');
   };
   return new Promise((resolve) => {
     const server = http.createServer(handler);
