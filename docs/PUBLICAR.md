@@ -39,10 +39,14 @@ npm run package                                # → dist/easymarker-1.0.0.zip
 
 ## 3. Publicar la política de privacidad
 
-La tienda pide una URL pública con la política de privacidad. Ya está redactada en [`PRIVACY.md`](../PRIVACY.md), en español e inglés. Opciones para publicarla:
+La tienda pide una URL pública con la política de privacidad. Ya está redactada en [`PRIVACY.md`](../PRIVACY.md), en español e inglés, y se publica directamente desde el repositorio:
 
-- **Repositorio público de GitHub:** usad la URL del archivo, `https://github.com/<usuario>/<repo>/blob/main/PRIVACY.md`.
-- **GitHub Pages**, **Google Sites** o un **documento de Google publicado en la web**, si el repositorio es privado.
+1. Haced público el repositorio: en GitHub, *Settings* → *General* → *Danger Zone* → *Change visibility* → *Public*.
+2. Comprobad en una ventana de incógnito que esta URL se abre sin iniciar sesión:
+   `https://github.com/NachoAC/EasyMarker/blob/main/PRIVACY.md`
+3. Esa es la URL que va en el paso 4.2.
+
+Si algún día el repositorio vuelve a ser privado, esa URL dejará de funcionar y la tienda puede retirar la extensión. En ese caso, publicad la política en otro sitio (Google Sites o un documento de Google publicado en la web) y actualizad la URL en el panel.
 
 ## 4. Subir el elemento y completar la ficha
 
@@ -60,7 +64,7 @@ En el panel pulsad **+ Nuevo elemento** (*New item*) y subid `dist/easymarker-1.
 | Capturas (1280×800, de 1 a 5) | `store/screenshot-1-start.png` … `store/screenshot-5-done.png` |
 | Mosaico promocional pequeño (440×280) | `store/promo-small-440x280.png` |
 | Mosaico de marquesina (1400×560) | Opcional. Solo se usa si Google destaca la extensión. |
-| Sitio web / URL de asistencia | Opcional: la URL del repositorio. |
+| Sitio web / URL de asistencia | Opcional: `https://github.com/NachoAC/EasyMarker`. |
 
 Las capturas de `store/` se generan con datos de ejemplo (`npm run test:e2e -- --screenshots`). Podéis sustituirlas por capturas de vuestros propios marcadores si lo preferís.
 

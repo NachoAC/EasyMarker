@@ -1,6 +1,6 @@
 # Política de privacidad de EasyMarker
 
-*Última actualización: 5 de octubre de 2026*
+*Última actualización: 6 de octubre de 2026*
 
 EasyMarker es una extensión de Chrome que comprueba si los enlaces de tus marcadores y de tu lista de lectura siguen funcionando.
 
@@ -28,13 +28,13 @@ EasyMarker es una extensión de Chrome que comprueba si los enlaces de tus marca
 
 ## Contacto
 
-Si tienes dudas sobre esta política, abre una incidencia en el repositorio del proyecto.
+Si tienes dudas sobre esta política, escribe a [ia7cast@gmail.com](mailto:ia7cast@gmail.com).
 
 ---
 
 # EasyMarker privacy policy (English)
 
-*Last updated: October 5, 2026*
+*Last updated: October 6, 2026*
 
 EasyMarker is a Chrome extension that checks whether the links in your bookmarks and reading list still work.
 
@@ -45,4 +45,4 @@ EasyMarker is a Chrome extension that checks whether the links in your bookmarks
 - Scan results live only in memory while the EasyMarker tab is open. The optional backup is a file downloaded to your computer.
 - Permissions: `bookmarks` and `readingList` to read and apply your confirmed changes; `webRequest` to observe the extension's own check requests (redirect status codes and network errors) during a scan; `declarativeNetRequestWithHostAccess` to isolate the icon visits (cookies removed, scripts and other resources blocked), only in the tabs EasyMarker opens and only while they are open; optional website access, requested when you start the first scan, to make those requests and isolate those visits. You can revoke it anytime at `chrome://extensions`.
 
-Questions: open an issue in the project's repository.
+Questions: write to [ia7cast@gmail.com](mailto:ia7cast@gmail.com).
